@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<head>
+<title>3D Grid</title>
+
+<style>
+body
+{
+	font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+<script language="javascript" type="text/javascript" src="js/libs/d3.min.js"></script>
+<script language="javascript" type="text/javascript" src="js/grid.js"></script>
+
+<script>
+var gridMain;
+var selectType;
+var currentObject;
+var gridDimensions = [20, 20, 20];
+
+function init() {
+    gridMain = new GridMapIso.Grid(d3.select('#divMain'), gridDimensions[0], gridDimensions[1], gridDimensions[2]);
+    
+    resize();
+    
+    gridMain.on('selectionDone', function(coords) {
+        var node;
+
+        switch (selectType) {
+            case 'dragonrider':
+                node = new GridMapIso.ObjectImage();
+                node.location = [coords[0], coords[1], coords[2]];
+                node.size = [3, 3, 3];
+                node.image = 'images/dragon-animated-gif.gif';
+                gridMain.addObject(node);
+                break;
+            case 'blackdragon':
+                node = new GridMapIso.ObjectImage();
+                node.location = [coords[0], coords[1], coords[2]];
+                node.size = [3, 3, 3];
+                node.image = 'images/dragon-animated-gif-17.gif';
+                gridMain.addObject(node);
+                break;
+           case 'block':
+                node = new GridMapIso.ObjectBlock();
+                node.location = [coords[0], coords[1], coords[2]];
+                node.color = "hsl(" + Math.random() * 360 + ",100%,50%)";
+                gridMain.addObject(node);
+                break;
+        }
+        
+        if (node) {
+            d3.select('#' + node.getDOMId())
+                .attr('cursor', 'pointer')
+                .on('mousedown', function() {
+                    showInfo(node);
+                    gridMain.highlightObject(gridMain.indexOfObject(node.id));
+                    currentObject = node;
+                });
+            
+            showInfo(node);
+            gridMain.highlightObject(gridMain.indexOfObject(node.id));
+            currentObject = node;
+        }
+    });
+
+    d3.select('#btnSelectDragonRider').on('click', function() {
+        d3.select('#divInfo').style('opacity', 0);
+        gridMain.removeHighlight();
+        selectType = "dragonrider"
+        gridMain.startSelection();
+    });
+    d3.select('#btnSelectBlackDragon').on('click', function() {
+        d3.select('#divInfo').style('opacity', 0);
+        gridMain.removeHighlight();
+        selectType = "blackdragon"
+        gridMain.startSelection();
+    });
+    d3.select('#btnSelectBlock').on('click', function() {
+        d3.select('#divInfo').style('opacity', 0);
+        gridMain.removeHighlight();
+        selectType = "block"
+        gridMain.startSelection();
+    });
+    d3.select('#btnInfoClose').on('click', function() {
+        d3.select('#divInfo').style('opacity', 0);
+        gridMain.removeHighlight();
+    });
+    
+    d3.select('#btnInfoUpdate').on('click', function() {
+        var size = [],
+            loc = [];
+        
+        var val;
+        
+        val = parseInt(document.getElementById('txtInfoLocationX').value);
+        if (val != NaN) {
+            loc[0] = val; 
+        } else {
+            alert('Bad Location: X value');
+            return;
+        }
+        val = parseInt(document.getElementById('txtInfoLocationY').value);
+        if (val != NaN) {
+            loc[1] = val; 
+        } else {
+            alert('Bad Location: Y value');
+            return;
+        }
+        val = parseInt(document.getElementById('txtInfoLocationZ').value);
+        if (val != NaN) {
+            loc[2] = val; 
+        } else {
+            alert('Bad Location: Z value');
+            return;
+        }
+        val = parseInt(document.getElementById('txtInfoSizeWidth').value);
+        if (val != NaN) {
+            size[0] = val; 
+        } else {
+            alert('Bad Width value');
+            return;
+        }
+        val = parseInt(document.getElementById('txtInfoSizeLength').value);
+        if (val != NaN) {
+            size[1] = val; 
+        } else {
+            alert('Bad Length value');
+            return;
+        }
+        val = parseInt(document.getElementById('txtInfoSizeHeight').value);
+        if (val != NaN) {
+            size[2] = val; 
+        } else {
+            alert('Bad Height value');
+            return;
+        }
+        
+        currentObject.location = loc;
+        currentObject.size = size;
+        
+        gridMain.redrawObjects();
+        
+        gridMain.highlightObject(gridMain.indexOfObject(currentObject.id));
+    });
+    
+    d3.select('#btnInfoDelete').on('click', function() {
+        d3.select('#divInfo').style('opacity', 0);
+        gridMain.removeHighlight();
+        gridMain.removeObject(gridMain.indexOfObject(currentObject.id));
+    });
+}
+
+function showInfo(obj) {
+    d3.select('#divInfo')
+        .style('opacity', 1);
+        
+    document.getElementById('txtInfoLocationX').value = obj.location[0];
+    document.getElementById('txtInfoLocationY').value = obj.location[1];
+    document.getElementById('txtInfoLocationZ').value = obj.location[2];
+    document.getElementById('txtInfoSizeWidth').value = obj.size[0];
+    document.getElementById('txtInfoSizeLength').value = obj.size[1];
+    document.getElementById('txtInfoSizeHeight').value = obj.size[2];
+}
+
+function resize() {
+    d3.selectAll('.div-body').style('height', (window.innerHeight - 100) + 'px');
+    
+    if (gridMain) {
+        gridMain.size([window.innerWidth, window.innerHeight - 100]);
+    }
+}
+
+window.addEventListener("load", init);
+
+window.addEventListener("resize", resize);
+
+</script>
+ 
+</head>
+<body>
+<div id="divTop" style="overflow: hidden; position: fixed; top: 0px; left: 0px; height: 60px; width: 100%; background-color: #ddd; z-index: 2;">
+   
+</div>
+<div id="divMain" class="div-body" style="position: fixed; top: 60px; left: 0px; width: 100%; background-color: white; overflow: hidden; z-index: 0;">
+   
+</div>
+<div id="divBottom" style="position: fixed; left: 0px; bottom: 0px; width: 100%; height: 40px; background-color: #ddd; z-index: 4; line-height: 40px; padding-left: 10px;">
+<button id="btnSelectDragonRider">Add Dragon Rider</button>
+<button id="btnSelectBlackDragon">Add Black Dragon</button>
+<button id="btnSelectBlock">Add Block</button>
+</div>
+<div id="divInfo" style="position: fixed; right: 10px; top: 70px; border: solid 1px black; width: 200px; height: 350px; background-color: white; opacity: 0;">
+    <img src="data:image/png;base64,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" id="btnInfoClose" style="position: absolute; width: 40px; height: 40px; top: 0px; right: 0px; cursor: pointer;" title="Close Info" />
+    <div id="divInfoBody" style="margin: 10px;">
+        <p>
+            <strong>Location:</strong> X <input type="text" id="txtInfoLocationX" /> Y <input type="text" id="txtInfoLocationY" /> Z <input type="text" id="txtInfoLocationZ" />
+        </p>
+        <p>
+            <strong>Size:</strong> Width <input type="text" id="txtInfoSizeWidth" /> Length <input type="text" id="txtInfoSizeLength" /> Height <input type="text" id="txtInfoSizeHeight" />
+        </p>
+        <p>
+            <button id="btnInfoUpdate">Update</button>
+        </p>
+        <p>
+            <button id="btnInfoDelete">Delete</button>
+        </p>
+    </div>
+</div>
+</body>
+</html>
